@@ -54,6 +54,9 @@ class Individual(models.Model):
     def __unicode__(self):
         return self.contributor_name
 
+    def attributes(self):
+        return ' '.join([str(getattr(self, field.name)) for field in self._meta.fields[1:12]])
+
     def scrub(self):
         from name_cleaver import IndividualNameCleaver
         if not self.contributor_name:
@@ -73,12 +76,47 @@ class Individual(models.Model):
         return
 
     @property
+    def nick_first(self):
+        if self.nick:
+            return nick
+        return self.first_name
+
+    @property
     def clean_name(self):
-        name = '%s %s %s %s %s' % (self.first_name, self.middle_name, self.last_name, self.suffix, self.nick)
-        regex = re.compile('[%s]|None' % re.escape(string.punctuation))
-        return ' '.join(regex.sub('', name).upper().split())
+        name = '%s %s %s %s' % (self.nick_first, self.middle_name, self.last_name, self.suffix)
+        name = name.replace(' None', '')
+        regex = re.compile('[%s]' % re.escape(string.punctuation))
+        return ' '.join(regex.sub('', name).lower().split())
+
+    @property
+    def clean_first(self):
+        name = '%s %s %s' % (self.nick_first, self.middle_name, self.suffix)
+        name = name.replace(' None', '')
+        regex = re.compile('[%s]' % re.escape(string.punctuation))
+        return ' '.join(regex.sub('', name).lower().split())
 
 
 class Group(models.Model):
     label = models.CharField(max_length=255)
     count = models.IntegerField(blank=True, null=True)
+
+    def __unicode__(self):
+        return self.label
+
+
+class Match(models.Model):
+    i1 = models.ForeignKey(Individual, related_name='i1')
+    i2 = models.ForeignKey(Individual, related_name='i2')
+    features = models.CharField(max_length=255)
+    same = models.NullBooleanField()
+    for_training = models.BooleanField()
+    score = models.FloatField(blank=True, null=True)
+
+    def __unicode__(self):
+        return '%s -> %s' % (self.i1, self.i2)
+
+    def i1_test(self):
+        return self.i1.attributes()
+
+    def i2_test(self):
+        return self.i2.attributes()
