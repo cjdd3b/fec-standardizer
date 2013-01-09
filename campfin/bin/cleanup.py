@@ -2,9 +2,11 @@ from name_cleaver import IndividualNameCleaver
 from apps.fec.models import *
 
 distinct_names = Contribution.objects.values('contributor_name', 'city', 'state', 'zip', 'employer', 'occupation')
+distinct_name_count = len(distinct_names)
 
 to_save = []
-for n in distinct_names:
+for i in xrange(distinct_name_count):
+    n = distinct_names[i]
     if not n['contributor_name']:
         continue
 
@@ -21,7 +23,6 @@ for n in distinct_names:
         occupation = n['occupation'],
         )
 
-    # TODO: Should these be made lowercase?
     individual.honorific = parsed_name.honorific
     individual.first_name = parsed_name.first
     individual.middle_name = parsed_name.middle
@@ -31,13 +32,14 @@ for n in distinct_names:
 
     # TODO: Should this not group as last names? Group on last names with some level
     # of similarity instead using LSH? Thinking of cases where in one case someone's
-    # name is JONES and another it's hyphenated or split like 'JONES BRENNAN'
+    # name is JONES and another it's hyphenated or split like 'JONES BRENNAN'. Or event
+    # last name groups that are markedly similar per shingling/Jaccard.
     group, created = Group.objects.get_or_create(label=parsed_name.last)
     if created: group.save()
     individual.group = group
 
     to_save.append(individual)
 
-    if len(to_save) % 5000 == 0: # TODO: This should also execute on final forloop iteration
+    if len(to_save) % 5000 == 0 or distinct_name_count == i:
         Individual.objects.bulk_create(to_save)
         to_save = []

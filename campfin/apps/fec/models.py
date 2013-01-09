@@ -80,7 +80,6 @@ class Individual(models.Model):
 
 class Group(models.Model):
     label = models.CharField(max_length=255, db_index=True)
-    count = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
         return self.label
