@@ -38,42 +38,24 @@ class Contribution(models.Model):
 
 class Individual(models.Model):
     contributor_name = models.CharField(max_length=600, blank=True)
-    city = models.CharField(max_length=90, blank=True)
-    state = models.CharField(max_length=6, blank=True)
-    zip = models.CharField(max_length=27, blank=True)
-    employer = models.CharField(max_length=114, blank=True)
-    occupation = models.CharField(max_length=114, blank=True)
-    honorific = models.CharField(max_length=20, blank=True)
-    first_name = models.CharField(max_length=255, blank=True)
-    middle_name = models.CharField(max_length=255, blank=True)
-    last_name = models.CharField(max_length=255, blank=True)
-    suffix = models.CharField(max_length=20, blank=True)
-    nick = models.CharField(max_length=255, blank=True)
-    group = models.ForeignKey('Group')
+    city = models.CharField(max_length=90, blank=True, null=True)
+    state = models.CharField(max_length=6, blank=True, null=True)
+    zip = models.CharField(max_length=27, blank=True, null=True)
+    employer = models.CharField(max_length=114, blank=True, null=True)
+    occupation = models.CharField(max_length=114, blank=True, null=True)
+    honorific = models.CharField(max_length=20, blank=True, null=True)
+    first_name = models.CharField(max_length=255, blank=True, null=True)
+    middle_name = models.CharField(max_length=255, blank=True, null=True)
+    last_name = models.CharField(max_length=255, blank=True, null=True)
+    suffix = models.CharField(max_length=20, blank=True, null=True)
+    nick = models.CharField(max_length=255, blank=True, null=True)
+    group = models.ForeignKey('Group', null=True)
 
     def __unicode__(self):
         return self.contributor_name
 
     def attributes(self):
         return ' '.join([str(getattr(self, field.name)) for field in self._meta.fields[1:12]])
-
-    def scrub(self):
-        from name_cleaver import IndividualNameCleaver
-        if not self.contributor_name:
-            return
-
-        parsed_name = IndividualNameCleaver(self.contributor_name).parse()
-        try:
-            self.honorific = parsed_name.honorific
-            self.first_name = parsed_name.first
-            self.middle_name = parsed_name.middle
-            self.last_name = parsed_name.last
-            self.suffix = parsed_name.suffix
-            self.nick = parsed_name.nick
-            self.save()
-        except:
-            print self.contributor_name
-        return
 
     @property
     def nick_first(self):
@@ -97,7 +79,7 @@ class Individual(models.Model):
 
 
 class Group(models.Model):
-    label = models.CharField(max_length=255)
+    label = models.CharField(max_length=255, db_index=True)
     count = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):

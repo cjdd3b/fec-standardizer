@@ -81,8 +81,8 @@ def same_city(i1, i2):
 
 def zip_sim(i1, i2):
     counter = 0
-    if len(i1.zip) == 0 or len(i2.zip) == 0: return counter
-    for i in range(len(i1.zip)):
+    if len(i1.zip) < 5 or len(i2.zip) < 5: return counter
+    for i in range(5):
         if i1.zip[i] == i2.zip[i]:
             counter += 1
         else:
@@ -93,6 +93,11 @@ def zip_sim(i1, i2):
 def first_name_similarity(i1, i2):
     name1_shingles = shingle(i1.first_name, 2)
     name2_shingles = shingle(i2.first_name, 2)
+    return jaccard_sim(name1_shingles, name2_shingles)
+
+def last_name_similarity(i1, i2):
+    name1_shingles = shingle(i1.last_name, 2)
+    name2_shingles = shingle(i2.last_name, 2)
     return jaccard_sim(name1_shingles, name2_shingles)
 
 def occupation_similarity(i1, i2):
@@ -111,6 +116,8 @@ def employer_similarity(i1, i2):
 # middle name = first name?
 # middle initial = first name?
 # gender
+# last name similarity
+# nonzero features
 
 ########## CREATE FEATURE VECTOR #########
 
@@ -128,11 +135,18 @@ def create_featurevector(i1, i2):
 
 if __name__ == '__main__':
 
-    for group in Group.objects.filter(count__lte=50, count__gte=2).order_by('?')[:50]:
+    for group in Group.objects.all():
+        individuals = group.individual_set.all()
+        tocreate = []
         for c in itertools.combinations(group.individual_set.all(), 2):
             compstring1 = '%s %s %s' % (c[0].clean_first, c[0].city, c[0].state)
             compstring2 = '%s %s %s' % (c[1].clean_first, c[1].city, c[1].state)
-            if jaccard_sim(shingle(compstring1, 2), shingle(compstring2, 2)) > 0.05:
+            # TODO: Is the 0.1 cutoff alright, or is it losing things? Have to check this out.
+            # can it move up or down?
+            if jaccard_sim(shingle(compstring1, 2), shingle(compstring2, 2)) > 0.1:
                 featurevector = str(create_featurevector(c[0], c[1]))
-                m, created = Match.objects.get_or_create(i1=c[0], i2=c[1], features=featurevector)
-                if created: m.save()
+                # TODO: Need initial match score here for training purposes? Would have to add
+                # to model as well.
+                m = Match(i1=c[0], i2=c[1], features=featurevector)
+                tocreate.append(m)
+        Match.objects.bulk_create(tocreate) # TODO: Make this update-friendly
