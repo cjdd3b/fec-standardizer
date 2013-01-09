@@ -1,7 +1,7 @@
 from name_cleaver import IndividualNameCleaver
 from apps.fec.models import *
 
-distinct_names = Contribution.objects.values('contributor_name', 'city', 'state', 'zip', 'employer', 'occupation')
+distinct_names = Contribution.objects.values('contributor_name', 'city', 'state', 'zip', 'employer', 'occupation').distinct()
 distinct_name_count = len(distinct_names)
 
 to_save = []
@@ -40,6 +40,6 @@ for i in xrange(distinct_name_count):
 
     to_save.append(individual)
 
-    if len(to_save) % 5000 == 0 or distinct_name_count == i:
+    if len(to_save) % 5000 == 0 or distinct_name_count == i + 1:
         Individual.objects.bulk_create(to_save)
         to_save = []
