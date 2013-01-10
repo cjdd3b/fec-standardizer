@@ -15,7 +15,6 @@ ACTIVE_FEATURES = [
     'employer_similarity',
 ]
 
-
 ########## HELPER FUNCTIONS ###########
 
 def shingle(word, n):
@@ -110,13 +109,14 @@ def employer_similarity(i1, i2):
     return jaccard_sim(e1_shingles, e2_shingles)
 
 # to add:
+# maybe city similarity?
 # distance between zips
 # matching industry code
-# middle name = first name?
-# middle initial = first name?
+# jaccard sim of first + middle rather than just first
 # gender
 # last name similarity
-# nonzero features
+# number of nonzero features
+# addresses would be huge
 
 ########## CREATE FEATURE VECTOR #########
 
@@ -128,7 +128,6 @@ def create_featurevector(i1, i2):
             if f.func_name in ACTIVE_FEATURES:
                 features.append(f(i1, i2))
     return features
-
 
 ########## MAIN ##########
 
@@ -148,4 +147,4 @@ if __name__ == '__main__':
                 # to model as well.
                 m = Match(i1=c[0], i2=c[1], features=featurevector)
                 tocreate.append(m)
-        Match.objects.bulk_create(tocreate) # TODO: Make this update-friendly
+        Match.objects.bulk_create(tocreate) # TODO: Make this update-friendly for when features change.

@@ -28,6 +28,7 @@ class Contribution(models.Model):
     fec_record = models.CharField(max_length=57, blank=True)
     nicar_election_year = models.CharField(max_length=12, blank=True)
     nicarid = models.IntegerField(primary_key=True)
+    donor_id = models.IntegerField()
     
     class Meta:
         db_table = u'fec_contribution'
@@ -92,6 +93,9 @@ class Match(models.Model):
     same = models.NullBooleanField()
     for_training = models.BooleanField()
     score = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'Matches'
 
     def __unicode__(self):
         return '%s -> %s' % (self.i1, self.i2)
