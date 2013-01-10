@@ -2,6 +2,7 @@ import re, string
 from django.db import models
 
 class Contribution(models.Model):
+    nicarid = models.IntegerField(primary_key=True, db_index=True)
     filer_id = models.CharField(max_length=27, blank=True)
     amendment_indicator = models.CharField(max_length=3, blank=True)
     report_type = models.CharField(max_length=9, blank=True)
@@ -9,14 +10,14 @@ class Contribution(models.Model):
     microfilm = models.CharField(max_length=33, blank=True)
     transaction_type = models.CharField(max_length=9, blank=True)
     entity_type = models.CharField(max_length=9, blank=True)
-    contributor_name = models.CharField(max_length=600, blank=True)
+    contributor_name = models.CharField(max_length=600, blank=True, db_index=True)
     nicar_last_name = models.CharField(max_length=600, blank=True)
     nicar_first_name = models.CharField(max_length=600, blank=True)
-    city = models.CharField(max_length=90, blank=True)
-    state = models.CharField(max_length=6, blank=True)
-    zip = models.CharField(max_length=27, blank=True)
-    employer = models.CharField(max_length=114, blank=True)
-    occupation = models.CharField(max_length=114, blank=True)
+    city = models.CharField(max_length=90, blank=True, db_index=True)
+    state = models.CharField(max_length=6, blank=True, db_index=True)
+    zip = models.CharField(max_length=27, blank=True, db_index=True)
+    employer = models.CharField(max_length=114, blank=True, db_index=True)
+    occupation = models.CharField(max_length=114, blank=True, db_index=True)
     trans_date = models.CharField(max_length=24, blank=True)
     nicar_date = models.DateField(null=True, blank=True)
     amount = models.DecimalField(null=True, max_digits=16, decimal_places=2, blank=True)
@@ -27,8 +28,13 @@ class Contribution(models.Model):
     memo_text = models.CharField(max_length=300, blank=True)
     fec_record = models.CharField(max_length=57, blank=True)
     nicar_election_year = models.CharField(max_length=12, blank=True)
-    nicarid = models.IntegerField(primary_key=True)
-    donor_id = models.IntegerField()
+    honorific = models.CharField(max_length=20, blank=True, null=True)
+    first_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    middle_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    last_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    suffix = models.CharField(max_length=20, blank=True, null=True)
+    nick = models.CharField(max_length=255, blank=True, null=True)
+    donor_id = models.IntegerField(null=True)
     
     class Meta:
         db_table = u'fec_contribution'
@@ -36,59 +42,14 @@ class Contribution(models.Model):
     def __unicode__(self):
         return '%s: %s' % (self.contributor_name, self.amount)
 
-
-class Individual(models.Model):
-    contributor_name = models.CharField(max_length=600, blank=True)
-    city = models.CharField(max_length=90, blank=True, null=True)
-    state = models.CharField(max_length=6, blank=True, null=True)
-    zip = models.CharField(max_length=27, blank=True, null=True)
-    employer = models.CharField(max_length=114, blank=True, null=True)
-    occupation = models.CharField(max_length=114, blank=True, null=True)
-    honorific = models.CharField(max_length=20, blank=True, null=True)
-    first_name = models.CharField(max_length=255, blank=True, null=True)
-    middle_name = models.CharField(max_length=255, blank=True, null=True)
-    last_name = models.CharField(max_length=255, blank=True, null=True)
-    suffix = models.CharField(max_length=20, blank=True, null=True)
-    nick = models.CharField(max_length=255, blank=True, null=True)
-    group = models.ForeignKey('Group', null=True)
-
-    def __unicode__(self):
-        return self.contributor_name
-
-    def attributes(self):
-        return ' '.join([str(getattr(self, field.name)) for field in self._meta.fields[1:12]])
-
     @property
-    def nick_first(self):
-        if self.nick:
-            return nick
-        return self.first_name
-
-    @property
-    def clean_name(self):
-        name = '%s %s %s %s' % (self.nick_first, self.middle_name, self.last_name, self.suffix)
-        name = name.replace(' None', '')
-        regex = re.compile('[%s]' % re.escape(string.punctuation))
-        return ' '.join(regex.sub('', name).lower().split())
-
-    @property
-    def clean_first(self):
-        name = '%s %s %s' % (self.nick_first, self.middle_name, self.suffix)
-        name = name.replace(' None', '')
-        regex = re.compile('[%s]' % re.escape(string.punctuation))
-        return ' '.join(regex.sub('', name).lower().split())
-
-
-class Group(models.Model):
-    label = models.CharField(max_length=255, db_index=True)
-
-    def __unicode__(self):
-        return self.label
+    def match_repr(self):
+        return '%s %s %s %s %s %s' % (self.contributor_name, self.city, self.state, self.zip, self.occupation, self.employer)
 
 
 class Match(models.Model):
-    i1 = models.ForeignKey(Individual, related_name='i1')
-    i2 = models.ForeignKey(Individual, related_name='i2')
+    c1 = models.ForeignKey(Contribution, related_name='c1', db_index=True)
+    c2 = models.ForeignKey(Contribution, related_name='c2', db_index=True)
     features = models.CharField(max_length=255)
     same = models.NullBooleanField()
     for_training = models.BooleanField()
@@ -98,10 +59,10 @@ class Match(models.Model):
         verbose_name_plural = 'Matches'
 
     def __unicode__(self):
-        return '%s -> %s' % (self.i1, self.i2)
+        return '%s -> %s' % (self.c1, self.c2)
 
-    def i1_test(self):
-        return self.i1.attributes()
+    def c1_string(self):
+        return self.c1.match_repr
 
-    def i2_test(self):
-        return self.i2.attributes()
+    def c2_string(self):
+        return self.c2.match_repr
