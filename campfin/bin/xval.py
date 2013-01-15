@@ -1,11 +1,11 @@
 import networkx as nx
-from apps.fec.models import Match, Individual
+from apps.data.models import DemoMatch
 from networkx.algorithms.components.connected import connected_components
 from sklearn.tree import DecisionTreeClassifier
 
-pool = Match.objects.filter(for_training=True).order_by('?')
-training = pool[:500]
-test = pool[500:]
+pool = DemoMatch.objects.all().order_by('?')
+training = pool[:5000]
+test = pool[5000:]
 training_correct = [int(t.same) for t in training]
 
 clf = DecisionTreeClassifier(compute_importances=True)
@@ -19,15 +19,15 @@ for t in test:
     m = clf.predict_proba(eval(t.features))
     if m[0][1] > 0.0:
         same = True
-        G.add_edge(t.i1.pk, t.i2.pk)
+        G.add_edge(t.c1.pk, t.c2.pk)
 
     if same == True and t.same == True:
         tp += 1
     elif same == True and t.same == False:
-        print 'False positive: %s %s' % (t, str(m))
+        #print 'False positive: %s %s' % (t, str(m))
         fp += 1
     elif same == False and t.same == True:
-        print 'False negative: %s %s' % (t, str(m))
+        #print 'False negative: %s %s' % (t, str(m))
         fn += 1
     else:
         tn += 1

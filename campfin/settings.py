@@ -139,7 +139,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
 
     # Project apps
-    'apps.fec',
+    'apps.data',
 )
 
 # A sample logging configuration. The only tangible logging
