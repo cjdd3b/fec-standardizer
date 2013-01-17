@@ -20,6 +20,7 @@ class Contribution(models.Model):
     suffix = models.CharField(max_length=20, blank=True, null=True)
     nick = models.CharField(max_length=255, blank=True, null=True)
     donor_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    classifier_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
     def __unicode__(self):
         return '%s: %s' % (self.contributor_name, self.amount)
@@ -29,11 +30,12 @@ class Contribution(models.Model):
         return '%s %s %s %s %s %s' % (self.contributor_name, self.city, self.state, self.zip, self.occupation, self.employer)
 
 
-class DemoMatch(models.Model):
+class Match(models.Model):
     c1 = models.ForeignKey(Contribution, related_name='c1_test', db_index=True)
     c2 = models.ForeignKey(Contribution, related_name='c2_test', db_index=True)
     features = models.CharField(max_length=255)
     same = models.NullBooleanField()
+    classifier_same = models.NullBooleanField()
     score = models.FloatField(blank=True, null=True)
 
     class Meta:
@@ -43,8 +45,17 @@ class DemoMatch(models.Model):
     def __unicode__(self):
         return '%s -> %s' % (self.c1, self.c2)
 
+    @property
     def c1_string(self):
         return self.c1.match_repr
 
+    @property
     def c2_string(self):
         return self.c2.match_repr
+
+    @property
+    def matching(self):
+        matching = True
+        if self.same <> self.classifier_same:
+            matching = False
+        return matching
