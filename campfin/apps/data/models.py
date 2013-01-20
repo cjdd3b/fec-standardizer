@@ -37,6 +37,9 @@ class Match(models.Model):
     same = models.NullBooleanField()
     classifier_same = models.NullBooleanField()
     score = models.FloatField(blank=True, null=True)
+    match_status = models.CharField(max_length=2,
+        choices=(('TP', 'True Positive'), ('TN', 'True Negative'), ('FP', 'False Positive'), ('FN', 'False Negative')),
+        blank=True, null=True)
 
     class Meta:
         verbose_name = 'Demo Match'
@@ -52,10 +55,3 @@ class Match(models.Model):
     @property
     def c2_string(self):
         return self.c2.match_repr
-
-    @property
-    def matching(self):
-        matching = True
-        if self.same <> self.classifier_same:
-            matching = False
-        return matching
