@@ -22,6 +22,14 @@ def commit_saves(tosave_list):
     transaction.commit()
     return
 
+def get_field_names(delimiter='|'):
+    table_name = Contribution._meta.db_table
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT COLUMN_NAME FROM information_schema.columns
+        WHERE table_name = '%s' ''' % table_name)
+    return delimiter.join([i[0] for i in cursor.fetchall()])
+
 ########## ASSIGNMENT STEPS ##########
 
 def load_data():
@@ -84,26 +92,48 @@ def assign_clusters():
 ########## TESTS ##########
 
 def sample_unmatching_pairs(n=500):
-    outfile = open('outputs/errorsample.txt', 'a')
+    outfile = open('outputs/sample_unmatching_pairs.txt', 'a')
     outfile.write('C1|C2|CRP_SAME|CLASSIFIER_SAME|SCORE\n')
     for m in Match.objects.exclude(classifier_same=F('same')).order_by('?')[:n]:
         outfile.write('%s|%s|%s|%s|%s\n' % (m.c1_string, m.c2_string, m.same, m.classifier_same, m.score))
     print 'Sample created! See outputs/errorsample.txt'
     return
 
-def fp_count():
-    pass
-
-def fn_count():
+def potential_fn_contribs():
+    outfile = open('outputs/potential_fn_contribs.csv', 'a')
+    outfile.write(get_field_names() + '\n')
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT SUM(c-1) FROM (SELECT donor_id, COUNT(distinct classifier_id) as c
+        SELECT DISTINCT data_contribution.*
+        FROM data_contribution,
+        (SELECT donor_id, COUNT(distinct classifier_id) AS c
         FROM data_contribution
         WHERE donor_id <> ''
         GROUP BY donor_id
         HAVING c >= 2
-        ORDER BY 2 DESC) counter''')
-    return cursor.fetchall()[0][0]
+        ORDER BY 2 DESC) counter
+        WHERE data_contribution.donor_id = counter.donor_id''')
+    for row in cursor.fetchall():
+        outfile.write('|'.join([str(i) for i in row]) + '\n')
+    return
+
+def potential_fp_contribs():
+    outfile = open('outputs/potential_fp_contribs.csv', 'a')
+    outfile.write(get_field_names() + '\n')
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT DISTINCT data_contribution.*
+        FROM data_contribution,
+        (SELECT classifier_id, COUNT(distinct donor_id) AS c
+        FROM data_contribution
+        WHERE donor_id <> ''
+        GROUP BY classifier_id
+        HAVING c >= 2
+        ORDER BY 2 DESC) counter
+        WHERE data_contribution.classifier_id = counter.classifier_id''')
+    for row in cursor.fetchall():
+        outfile.write('|'.join([str(i) for i in row]) + '\n')
+    return
 
 
 ########## MAIN ##########
@@ -111,6 +141,7 @@ def fn_count():
 if __name__ == '__main__':
     #if LOAD: load_data()
     #assign_clusters()
-    print fn_count()
+    potential_fp_contribs()
+    potential_fn_contribs()
 
 
