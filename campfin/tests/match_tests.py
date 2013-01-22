@@ -1,4 +1,4 @@
-from django.db import connection, transaction
+from django.db import connection
 from apps.data.models import Match, Contribution
 
 ########## HELPER FUNCTIONS ##########
@@ -18,15 +18,15 @@ def potential_fn_contribs():
     outfile.write(get_field_names() + '\n')
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT DISTINCT data_contribution.*
-        FROM data_contribution,
-        (SELECT donor_id, COUNT(distinct classifier_id) AS c
-        FROM data_contribution
-        WHERE donor_id <> ''
-        GROUP BY donor_id
-        HAVING c >= 2
-        ORDER BY 2 DESC) counter
-        WHERE data_contribution.donor_id = counter.donor_id''')
+            SELECT DISTINCT data_contribution.*
+            FROM data_contribution,
+            (SELECT donor_id, COUNT(distinct classifier_id) AS c
+            FROM data_contribution
+            WHERE donor_id <> ''
+            GROUP BY donor_id
+            HAVING c >= 2
+            ORDER BY 2 DESC) counter
+            WHERE data_contribution.donor_id = counter.donor_id''')
     for row in cursor.fetchall():
         outfile.write('|'.join([str(i) for i in row]) + '\n')
     return

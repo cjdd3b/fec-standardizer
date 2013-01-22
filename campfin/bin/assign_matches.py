@@ -1,24 +1,19 @@
 import sys, hashlib
 import networkx as nx
-from networkx.algorithms.components.connected import connected_components
 from django.db import connection, transaction
-from sklearn.tree import DecisionTreeClassifier
+from networkx.algorithms.components.connected import connected_components
+from sklearn.ensemble import RandomForestClassifier
+from django.db.models import F
 from apps.data.models import Match, Contribution
+from utils.db import commit_saves
 
 ########## GLOBALS ##########
 
 LOAD = True
 
-TRAINING_DATA = Match.objects.all().order_by('?')[:5000]
+TRAINING_DATA = Match.objects.all().order_by('?')[:10000]
 
 ########## HELPER FUNCTIONS ##########
-
-@transaction.commit_manually
-def commit_saves(tosave_list):
-    for item in tosave_list:
-        item.save()
-    transaction.commit()
-    return
 
 def get_match_status(m):
     if m.same == True and m.classifier_same == True:
@@ -37,12 +32,12 @@ def mark_matches():
     ''' 
     These functions assume that we're using the last name grouping method from previous step.
     '''
-    clf = DecisionTreeClassifier(compute_importances=True)
+    clf = RandomForestClassifier(n_estimators=10, random_state=0)
     clf = clf.fit([eval(t.features) for t in TRAINING_DATA], [int(t.same) for t in TRAINING_DATA])
 
-    for ln in Contribution.objects.all().values('last_name').distinct():
+    for g in Contribution.objects.all().values('group_id').distinct():
         toupdate = []
-        for m in Match.objects.filter(c1__last_name=ln['last_name']):
+        for m in Match.objects.filter(c1__group_id=g['group_id']):
             edge = clf.predict_proba(eval(m.features))
             if edge[0][1] > edge[0][0]:
                 m.classifier_same = True
@@ -57,18 +52,18 @@ def mark_matches():
 
 
 def assign_clusters():
-    clf = DecisionTreeClassifier(compute_importances=True)
+    clf = RandomForestClassifier(n_estimators=10, random_state=0)
     clf = clf.fit([eval(t.features) for t in TRAINING_DATA], [int(t.same) for t in TRAINING_DATA])
 
-    print 'Processing last name groups ...'
-    for ln in Contribution.objects.all().values('last_name').distinct():
-        if not ln['last_name']: continue
+    print 'Processing groups ...'
+    for g in Contribution.objects.all().values('group_id').distinct():
+        if not g['group_id']: continue
         toupdate = []
         G = nx.Graph()
-        nameid = hashlib.sha224(ln['last_name']).hexdigest()
-        for m in Match.objects.filter(c1__last_name=ln['last_name']):
+        nameid = hashlib.sha224(str(g['group_id'])).hexdigest()
+        for m in Match.objects.filter(c1__group_id=g['group_id']):
             edge = clf.predict_proba(eval(m.features))
-            if edge[0][1] > edge[0][0]:    
+            if edge[0][1] > edge[0][0]:
                 G.add_edge(m.c1, m.c2)
 
         ccs = connected_components(G)
@@ -81,16 +76,16 @@ def assign_clusters():
         commit_saves(toupdate)
 
     print 'Cleaning up the leftovers ...'
-    tocleanup = []
-    for record in Contribution.objects.filter(classifier_id__isnull=True):
-        if not record.match_repr: continue
-        classifier_id = '99%s' % hashlib.sha224(record.match_repr).hexdigest()
-        record.classifier_id = classifier_id[:12]
-        tocleanup.append(record)
-    commit_saves(tocleanup)
+    cursor = connection.cursor()
+    cursor.execute('''
+        UPDATE data_contribution
+        set classifier_id = LOWER(SUBSTR(PASSWORD(CONCAT(contributor_name, city, state, zip, employer, occupation)), 2, 12))
+        WHERE classifier_id IS null''')
+    transaction.commit_unless_managed()
     return
 
 ########## MAIN ##########
 
 if __name__ == '__main__':
-    mark_matches()
+    #mark_matches()
+    assign_clusters()

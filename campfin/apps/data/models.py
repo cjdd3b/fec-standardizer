@@ -1,6 +1,13 @@
 import re, string
 from django.db import models
 
+class Group(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return self.name
+
+
 class Contribution(models.Model):
     id = models.IntegerField(primary_key=True, db_index=True)
     transaction_id = models.CharField(max_length=96, blank=True, null=True)
@@ -19,6 +26,7 @@ class Contribution(models.Model):
     last_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     suffix = models.CharField(max_length=20, blank=True, null=True)
     nick = models.CharField(max_length=255, blank=True, null=True)
+    group = models.ForeignKey(Group, blank=True, null=True, db_index=True)
     donor_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     classifier_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
@@ -31,8 +39,8 @@ class Contribution(models.Model):
 
 
 class Match(models.Model):
-    c1 = models.ForeignKey(Contribution, related_name='c1_test', db_index=True)
-    c2 = models.ForeignKey(Contribution, related_name='c2_test', db_index=True)
+    c1 = models.ForeignKey(Contribution, related_name='c1_set', db_index=True)
+    c2 = models.ForeignKey(Contribution, related_name='c2_set', db_index=True)
     features = models.CharField(max_length=255)
     same = models.NullBooleanField()
     classifier_same = models.NullBooleanField()
@@ -47,11 +55,3 @@ class Match(models.Model):
 
     def __unicode__(self):
         return '%s -> %s' % (self.c1, self.c2)
-
-    @property
-    def c1_string(self):
-        return self.c1.match_repr
-
-    @property
-    def c2_string(self):
-        return self.c2.match_repr

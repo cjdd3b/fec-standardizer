@@ -54,24 +54,35 @@ def get_feature_importances(classifier):
 if __name__ == '__main__':
     print '----------- DECISION TREE -----------'
     dtree_classifier = DecisionTreeClassifier(compute_importances=True)
+    print get_scores_for_classifier(dtree_classifier, folds=10, score_func=metrics.precision_score)
+    print get_scores_for_classifier(dtree_classifier, folds=10, score_func=metrics.recall_score)
     print get_scores_for_classifier(dtree_classifier)
 
-    #print '---------- LOGISTIC REGRESSION ----------'
-    #log_classifier = LogisticRegression(C=1.0, penalty='l2', tol=0.01)
-    #print get_f1_for_classifier(log_classifier)
+    print '---------- LOGISTIC REGRESSION ----------'
+    log_classifier = LogisticRegression(C=1.0, penalty='l2', tol=0.01)
+    print get_scores_for_classifier(log_classifier, folds=10, score_func=metrics.precision_score)
+    print get_scores_for_classifier(log_classifier, folds=10, score_func=metrics.recall_score)
+    print get_scores_for_classifier(log_classifier)
 
-    #print '---------- GAUSSIAN NAIVE BAYES -----------'
-    #gnb_classifier = GaussianNB()
-    #print get_f1_for_classifier(gnb_classifier)
+    print '---------- GAUSSIAN NAIVE BAYES -----------'
+    gnb_classifier = GaussianNB()
+    print get_scores_for_classifier(gnb_classifier, folds=10, score_func=metrics.precision_score)
+    print get_scores_for_classifier(gnb_classifier, folds=10, score_func=metrics.recall_score)
+    print get_scores_for_classifier(gnb_classifier)
 
-    #print '---------- RANDOM FOREST ----------'
-    #rforest_classifier = RandomForestClassifier(n_estimators=10, compute_importances=True, random_state=0)
-    #print get_f1_for_classifier(rforest_classifier)
+    print '---------- RANDOM FOREST ----------'
+    rforest_classifier = RandomForestClassifier(n_estimators=10, compute_importances=True, random_state=0)
+    print get_scores_for_classifier(rforest_classifier, folds=10, score_func=metrics.precision_score)
+    print get_scores_for_classifier(rforest_classifier, folds=10, score_func=metrics.recall_score)
+    print get_scores_for_classifier(rforest_classifier)
 
-    # Commented out this SVM doesn't scale well to a large number of examples.
-    # Training takes a looooooong time.
-    #print '---------- SUPPORT VECTOR MACHINE -----------'
-    #svm_classifier = svm.SVC(kernel='linear', C=1)
-    #print get_f1_for_classifier(svm_classifier)
+    print '---------- SUPPORT VECTOR MACHINE -----------'
+    DATASET_SIZE = 20000
+    svm_classifier = svm.SVC(kernel='linear', C=1)
+    print get_scores_for_classifier(svm_classifier, folds=10, score_func=metrics.precision_score)
+    print get_scores_for_classifier(svm_classifier, folds=10, score_func=metrics.recall_score)
+    print get_scores_for_classifier(svm_classifier)
+    DATASET_SIZE = 100000
 
-    get_feature_importances(dtree_classifier)
+    # Get feature importances for the Decision Tree, which is the classifier we ultimately will use
+    get_feature_importances(rforest_classifier)

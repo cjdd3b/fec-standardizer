@@ -1,7 +1,8 @@
 import itertools, random
-from apps.data.models import Contribution, Match
+from apps.data.models import Contribution, Match, Group
 from utils.similarity import jaccard_sim, shingle
 from utils.lsh.lsh import Cluster
+from utils.db import commit_saves
 from learn.features import *
 
 ########## GLOBALS ##########
@@ -28,16 +29,17 @@ INITIAL_LIKELIHOOD = 0.1
 
 ########## GROUPING FUNCTIONS ##########
 
-def last_names():
+def group_by_last_name():
     '''
-    Should return a list or generator data in this format:
-    (group_name, [list, of, Contribution, objects])
+    These are in here as extra steps for testing, but the whole process can be done faster if grouping
+    is done on the fly. Make these into generators. Copy in old code from last version into comments.
     '''
-    contribs = Contribution.objects.all().order_by('last_name')
-    for group in itertools.groupby(contribs, lambda ln: ln.last_name):
-            yield group
+    for c in Contribution.objects.all().values('last_name').distinct():
+        g, created = Group.objects.get_or_create(name='NAME: %s' % c['last_name'])
+        contribs = Contribution.objects.filter(last_name=c['last_name']).update(group=g)
+    return
 
-def lsh():
+def group_by_lsh():
     # First step is to create the actual LSH clusters, based on 1-shingles of the names
     cluster = Cluster(threshold=1.0)
     for ln in Contribution.objects.values('last_name').distinct():
@@ -47,9 +49,11 @@ def lsh():
 
     # Next step is to iterate through those clusters and produce an output of each set
     # of last names, along with the contributions associated with them.
-    for c in cluster.get_sets():
-        for name in c:
-            yield (name, Contribution.objects.filter(last_name=name))
+    for c in enumerate(cluster.get_sets()):
+        for name in c[1]:
+            g, created = Group.objects.get_or_create(name='LSH: %s' % c[0])
+            Contribution.objects.filter(last_name=name).update(group=g)
+    return
 
 ########## CREATE FEATURE VECTOR #########
 
@@ -73,12 +77,15 @@ def get_featurevector_order():
 
 ########## MAIN ##########
 
-GROUPING_FUNCTION = last_names()
-
 if __name__ == '__main__':
-    for g in GROUPING_FUNCTION:
+    # First do the initial groupings
+    print 'Forming initial groups ...'
+    group_by_last_name()
+
+    print 'Preprocessing matches ...'
+    for g in Group.objects.all():
         tocreate = []
-        for c in itertools.combinations(g[1], 2):
+        for c in itertools.combinations(g.contribution_set.all(), 2):
             compstring1 = '%s %s %s' % (c[0].first_name, c[0].city, c[0].state)
             compstring2 = '%s %s %s' % (c[1].first_name, c[1].city, c[1].state)
             if jaccard_sim(shingle(compstring1.lower(), 2), shingle(compstring2.lower(), 2)) >= INITIAL_LIKELIHOOD:
