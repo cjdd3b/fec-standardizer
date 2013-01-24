@@ -1,9 +1,20 @@
+'''
+match_tests.py
+
+Functions to return false negatives and false positives that our process misclassified,
+according to CRP ground truth data.
+'''
+
 from django.db import connection
 from apps.data.models import Match, Contribution
 
 ########## HELPER FUNCTIONS ##########
 
 def get_field_names(delimiter='|'):
+    '''
+    Returns the field names for the Contribution table in order. Used to write
+    headers to output CSVs.
+    '''
     table_name = Contribution._meta.db_table
     cursor = connection.cursor()
     cursor.execute('''
@@ -14,7 +25,13 @@ def get_field_names(delimiter='|'):
 ########## TESTS ##########
 
 def potential_fn_contribs():
+    '''
+    Returns potential false negatives returned by our classifier from the contributions table.
+    Note that this query returns whole groups of names that contain false negative matches, meaning
+    it also returns some correct examples.
+    '''
     outfile = open('outputs/potential_fn_contribs.csv', 'a')
+    # Write a header row to an output csv
     outfile.write(get_field_names() + '\n')
     cursor = connection.cursor()
     cursor.execute('''
@@ -27,12 +44,19 @@ def potential_fn_contribs():
             HAVING c >= 2
             ORDER BY 2 DESC) counter
             WHERE data_contribution.donor_id = counter.donor_id''')
+    # Write each potential false negative to the output file
     for row in cursor.fetchall():
         outfile.write('|'.join([str(i) for i in row]) + '\n')
     return
 
 def potential_fp_contribs():
+    '''
+    Returns potential false positives returned by our classifier from the contributions table.
+    Note that this query returns whole groups of names that contain false positive matches, meaning
+    it also returns some correct examples.
+    '''
     outfile = open('outputs/potential_fp_contribs.csv', 'a')
+    # Write a header row to an output csv
     outfile.write(get_field_names() + '\n')
     cursor = connection.cursor()
     cursor.execute('''
@@ -45,6 +69,7 @@ def potential_fp_contribs():
         HAVING c >= 2
         ORDER BY 2 DESC) counter
         WHERE data_contribution.classifier_id = counter.classifier_id''')
+    # Write each potential false positive to the output file
     for row in cursor.fetchall():
         outfile.write('|'.join([str(i) for i in row]) + '\n')
     return
