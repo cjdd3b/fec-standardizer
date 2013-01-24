@@ -10,6 +10,9 @@ class MatchAdmin(admin.ModelAdmin):
     search_fields = ['c1__contributor_name', 'c2__contributor_name']
 
     def c1_repr(self, obj):
+        '''
+        Allows us to use property from the related model in the admin.
+        '''
         return obj.c1.match_repr
 
     def c2_repr(self, obj):

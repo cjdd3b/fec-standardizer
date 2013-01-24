@@ -2,6 +2,12 @@ import re, string
 from django.db import models
 
 class Group(models.Model):
+    '''
+    Groups for the initial processing stage. In practice, these usually correspond
+    with last names. But using a group model like this also allows the contributions
+    to be grouped based on other critiera. Probably wouldn't be used in an actual live
+    application.
+    '''
     name = models.CharField(max_length=255)
 
     def __unicode__(self):
@@ -9,6 +15,10 @@ class Group(models.Model):
 
 
 class Contribution(models.Model):
+    '''
+    Model representing individual contribution records. Basically the equivalent of abbreviated
+    raw campaign finance dataset from CRP and Sunlight:
+    '''
     id = models.IntegerField(primary_key=True, db_index=True)
     transaction_id = models.CharField(max_length=96, blank=True, null=True)
     recipient = models.CharField(max_length=255, blank=True)
@@ -35,10 +45,16 @@ class Contribution(models.Model):
 
     @property
     def match_repr(self):
+        '''
+        Representation of a campaign finance record for use in match admin.
+        '''
         return '%s %s %s %s %s %s' % (self.contributor_name, self.city, self.state, self.zip, self.occupation, self.employer)
 
 
 class Match(models.Model):
+    '''
+    Pairs of contributions that the classifier uses to make its judgments.
+    '''
     c1 = models.ForeignKey(Contribution, related_name='c1_set', db_index=True)
     c2 = models.ForeignKey(Contribution, related_name='c2_set', db_index=True)
     features = models.CharField(max_length=255)
