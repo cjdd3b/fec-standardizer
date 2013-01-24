@@ -146,7 +146,7 @@ if __name__ == '__main__':
                 match = Match(c1=c1, c2=c2, features=featurevector)
                 match.same = False
                 # If the two contributions in the pair are regarded as coming from the same donor by the ground-truth
-                # CRP data, mark them as a match so we can compare our classifier to them later.
+                # CRP data, mark them as a match so we can use them for testing and training the classifier.
                 if (c1.donor_id and c2.donor_id) and (c1.donor_id == c2.donor_id):
                     match.same = True
                 tocreate.append(match)
