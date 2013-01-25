@@ -134,17 +134,14 @@ def assign_clusters():
         # Bulk save the donor IDs to the contribution table
         commit_saves(toupdate)
 
-    # The above step only labels donors who appear in more than one contribution. This step assigns a unique ID
-    # to all the one-time donors that don't appear in the clusters. It's mostly just a cleanup step.
     print 'Cleaning up the leftovers ...'
-    cursor = connection.cursor()
-    # For ease and speed, we're just using MySQL's password hash function to create a unique ID for each one-time donor.
-    # Beats running a loop, which is a lot slower.
-    cursor.execute('''
-        UPDATE data_contribution
-        set classifier_id = LOWER(SUBSTR(PASSWORD(CONCAT(contributor_name, city, state, zip, employer, occupation)), 2, 12))
-        WHERE classifier_id IS null''')
-    transaction.commit_unless_managed()
+    tocleanup = []
+    for record in Contribution.objects.filter(classifier_id__isnull=True):
+        if not record.match_repr: continue
+        classifier_id = '99%s' % hashlib.sha224(record.match_repr).hexdigest()
+        record.classifier_id = classifier_id[:12]
+        tocleanup.append(record)
+    commit_saves(tocleanup)
     return
 
 ########## MAIN ##########
