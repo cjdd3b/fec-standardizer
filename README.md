@@ -27,4 +27,6 @@ The whole process is documented in detail in the [wiki](https://github.com/cjdd3
 
 ## Questions or comments
 
+At best, I'm an amateur when it comes to a lot of the techniques used here. I'm sure I made some mistakes and did some stupid things. If so, I'd love to hear about them!
+
 If you have any questions or comments, feel free to leave them in the wiki or contact chase.davis@gmail.com. Thanks for your interest!
