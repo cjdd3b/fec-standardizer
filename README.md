@@ -27,4 +27,4 @@ The whole process is documented in detail in the [wiki](https://github.com/cjdd3
 
 ## Questions or comments
 
-If you have any questions or comments, contact chase.davis@gmail.com. Thanks for your interest!
+If you have any questions or comments, feel free to leave them in the wiki or contact chase.davis@gmail.com. Thanks for your interest!

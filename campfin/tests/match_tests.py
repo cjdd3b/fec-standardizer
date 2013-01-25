@@ -13,14 +13,13 @@ from apps.data.models import Match, Contribution
 def get_field_names(delimiter='|'):
     '''
     Returns the field names for the Contribution table in order. Used to write
-    headers to output CSVs.
+    headers to output CSVs. Can be retrieved automatically on some databases, but
+    just easier to do manually to ensure compatibility.
     '''
-    table_name = Contribution._meta.db_table
-    cursor = connection.cursor()
-    cursor.execute('''
-        SELECT COLUMN_NAME FROM information_schema.columns
-        WHERE table_name = '%s' ''' % table_name)
-    return delimiter.join([i[0] for i in cursor.fetchall()])
+    fields = ['id', 'transaction_id', 'recipient', 'contributor_name', 'city', 'state',
+        'zip', 'employer', 'occupation', 'date', 'amount', 'honorific', 'first_name',
+        'middle_name', 'last_name', 'suffix', 'nick', 'group_id', 'donor_id', 'classifier_id']
+    return '|'.join(fields)
 
 ########## TESTS ##########
 
