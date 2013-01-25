@@ -1,7 +1,7 @@
 fec-standardizer
 ================
 
-An experiment to standardize individual donor names in federal campaign finance data using simple graph theory and machine learning.
+An experiment to standardize individual donor names in campaign finance data using simple graph theory and machine learning.
 
 ## Basics
 
