@@ -1,5 +1,5 @@
 '''
-preprocessing.py
+preprocess.py
 
 This script actually does a couple of things. First, it divides the raw contribution data into 
 smaller groups that are easier to process, as described here: 
